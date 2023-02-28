@@ -1,4 +1,4 @@
-import React, { Component, useEffect, useState } from "react";
+import React, { Component, useEffect, useLayoutEffect, useState } from "react";
 import styles from "./index.css";
 import mojs from 'mo-js'
 
@@ -15,7 +15,8 @@ const useClapAnimation = ({ clapRef, clapCountRef, clapTotalRef }) => {
   const [animationTimeline, setAnimationTimeline] = useState(() => new mojs.Timeline())
   const tlDuration = 300;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (!clapRef || !clapCountRef || !clapTotalRef) return
     const scaleButton = new mojs.Html({
       el: clapRef,
       duration: tlDuration,
@@ -86,16 +87,19 @@ const useClapAnimation = ({ clapRef, clapCountRef, clapTotalRef }) => {
         radius: { 2: 0 }
       }
     })
-    // const count = document.getElementById("count")
-    // count.style.opacity = '0'
 
-    const clap = document.getElementById("clap")
-    clap.style.transform = 'scale(1.1)'
+    // if (typeof clapRef === "string") {
+    // const clap = document.getElementById(clapRef);
+    // clap.style.transform = 'scale(1.1)'
+    // }
+    // if (clapRef.style) {
+    //   clapRef.style.transform = 'scale(1.1)'
+    // }
 
     const newAnimation = animationTimeline.add([scaleButton, countTotalAnimation, countAnimation, triangleAnimation, burstAnimation])
     setAnimationTimeline(newAnimation)
 
-  }, [])
+  }, [clapRef, clapCountRef, clapTotalRef])
 
   return animationTimeline
 }
