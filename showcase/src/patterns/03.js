@@ -88,13 +88,13 @@ const useClapAnimation = ({ clapRef, clapCountRef, clapTotalRef }) => {
       }
     })
 
-    // if (typeof clapRef === "string") {
-    // const clap = document.getElementById(clapRef);
-    // clap.style.transform = 'scale(1.1)'
-    // }
-    // if (clapRef.style) {
-    //   clapRef.style.transform = 'scale(1.1)'
-    // }
+    if (typeof clapRef === "string") {
+      const clap = document.getElementById(clapRef);
+      clap.style.transform = 'scale(1.1)'
+    }
+    if (clapRef.style) {
+      clapRef.style.transform = 'scale(1.1)'
+    }
 
     const newAnimation = animationTimeline.add([scaleButton, countTotalAnimation, countAnimation, triangleAnimation, burstAnimation])
     setAnimationTimeline(newAnimation)
@@ -112,7 +112,7 @@ const useClapAnimation = ({ clapRef, clapCountRef, clapTotalRef }) => {
 const MediumClapContext = React.createContext()
 const useMediumClapContext = () => React.useContext(MediumClapContext)
 
-const MediumClap = ({ children }) => {
+const MediumClap = ({ children, onClap }) => {
   const [{ clapRef, clapCountRef, clapTotalRef }, setRefsState] = React.useState({})
 
   const setRef = React.useCallback((node) => {
@@ -127,7 +127,7 @@ const MediumClap = ({ children }) => {
   const animationTimeline = useClapAnimation({ clapRef, clapCountRef, clapTotalRef })
   const MAXIMUM_USER_CLAP = 50;
   const [clapState, setClapState] = React.useState(initialState)
-
+  const { count } = clapState
   const handleCountUpdate = () => {
     animationTimeline.replay()
     setClapState(prevState => ({
@@ -136,6 +136,14 @@ const MediumClap = ({ children }) => {
       countTotal: Math.min(++prevState.countTotal, MAXIMUM_USER_CLAP + initialState.countTotal)
     }))
   }
+
+  const componentJustMounted = React.useRef(true)
+  React.useEffect(() => {
+    if (!componentJustMounted.current) {
+      onClap && onClap(clapState)
+    }
+    componentJustMounted.current = false
+  }, [count])
 
   const memoizedValue = React.useMemo(() => ({
     ...clapState,
@@ -190,12 +198,21 @@ MediumClap.ClapTotal = ClapTotal
  * Useage
  */
 
-const Usage = () => (
-  <MediumClap>
-    <MediumClap.ClapIcon />
-    <MediumClap.ClapCount />
-    <MediumClap.ClapTotal />
-  </MediumClap>
-)
+const Usage = () => {
+  const [count, setCount] = React.useState(0)
+  const handleClap = (clapState) => {
+    setCount(clapState.count)
+  }
 
+  return (
+    <div style={{ width: "100%" }}>
+      <MediumClap onClap={handleClap}>
+        <MediumClap.ClapIcon />
+        <MediumClap.ClapCount />
+        <MediumClap.ClapTotal />
+      </MediumClap>
+      {!!count && <div style={{ paddingTop: "30px" }}>You have clapped {count} times</div>}
+    </div>
+  )
+}
 export default Usage;
