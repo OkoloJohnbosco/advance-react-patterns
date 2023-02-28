@@ -48,35 +48,60 @@ const withClapAnimation = (WrappedComponent) => {
       })
 
       const burstAnimation = new mojs.Burst({
-        radius: { 30: 95 },
+        radius: { 30: 75 },
         count: 10,
 
-        duration: 4000,
-        onComplete() {
-          console.log('completed');
-        },
+        // onComplete() {
+        //   console.log('completed');
+        // },
+        angle: 25,
         parent: "#clap",
         children: {
+          duration: 600,
           // property map - maps over children with mod function
           shape: ['circle', 'polygon'],
           // property map - maps over children with mod function
           fill: ['#27ae60', '#27ae60', '#27ae60'],
-          angle: { 0: 180 },
+          radius: { 4: 0 },
+          angle: 90,
           // rand string - generates random value for every child rand( min, max )
-          degreeShift: 'rand(-60, 360)',
+          // degreeShift: 'rand(-60, 360)',
+          easing: mojs.easing.bezier(0.1, 1, 0.3, 1),
           // stagger string( start, step ) for every child
-          delay: 'stagger(0, 25)',
+          delay: 30,
+          speed: 0.2
         }
       });
 
-      const triangleAnimation = new mojs.Burst({})
+      const triangleAnimation = new mojs.Burst({
+        parent: "#clap",
+        radius: { 50: 95 },
+        count: 5,
+        angle: 30,
+        children: {
+          shape: 'polygon',
+          duration: tlDuration * 3,
+          radius: { 6: 2 },
+          stroke: "rgba(211,54,0,0.5)",
+          strokeWidth: 2,
+          angle: 90,
+          delay: 30,
+          speed: 0.2,
+          easing: mojs.easing.bezier(0.1, 1, 0.3, 1)
+        }
+      }).then({
+        children: {
+          delay: 90,
+          radius: { 2: 0 }
+        }
+      })
       // const count = document.getElementById("count")
       // count.style.opacity = '0'
 
       const clap = document.getElementById("clap")
       clap.style.transform = 'scale(1.1)'
 
-      const newAnimation = this.animationTimeline.add([scaleButton, countTotalAnimation, countAnimation, burstAnimation])
+      const newAnimation = this.animationTimeline.add([scaleButton, countTotalAnimation, countAnimation, triangleAnimation, burstAnimation])
       this.setState({ animationTimeline: newAnimation })
     }
 
