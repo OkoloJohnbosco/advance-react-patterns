@@ -22,6 +22,7 @@
     "css-loader": "^3.2.0",
     "file-loader": "^4.2.0",
     "html-webpack-plugin": "^3.2.0",
+    "prettier": "^2.8.4",
     "style-loader": "^1.0.0",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.9",
@@ -30,6 +31,7 @@
     "webpack-merge": "^4.2.2"
   },
   "dependencies": {
+    "@babel/plugin-proposal-optional-chaining": "^7.21.0",
     "@reach/router": "^1.2.1",
     "mo-js": "^0.288.2",
     "prop-types": "^15.7.2",
