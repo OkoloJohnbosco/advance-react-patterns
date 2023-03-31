@@ -8,13 +8,26 @@ import React, {
 } from 'react'
 
 import mojs from 'mo-js'
+import { generateRandomNumber } from '../utils/generateRandomNumber'
 import styles from './index.css'
 import userStyles from './usage.css'
 
 /** ====================================
- *          🔰Hook
-      Hook for Animation
-==================================== **/
+   *          🔰Hook
+      Hook for Holding Previous Vals
+  ==================================== **/
+function usePrevious (value) {
+  const ref = useRef()
+  useEffect(() => {
+    ref.current = value
+  })
+  return ref.current === undefined ? null : ref.current
+}
+
+/** ====================================
+   *          🔰Hook
+        Hook for Animation
+  ==================================== **/
 
 const useClapAnimation = ({
   duration: tlDuration,
@@ -121,44 +134,47 @@ const useClapAnimation = ({
 }
 
 /** ====================================
- *          🔰Hook
-      Hook for Clap State
-==================================== **/
+   *          🔰Hook
+        Hook for Clap State
+  ==================================== **/
 const MAX_CLAP = 50
 const INIT_STATE = {
   count: 0,
-  countTotal: 1000,
+  countTotal: generateRandomNumber(500, 10000),
   isClicked: false
 }
 
 const callFnsInSequence = (...fns) => (...args) =>
   fns.forEach(fn => fn && fn(...args))
 
-const clapReducer = (state, { type, payload }) => {
-  switch (type) {
-    case "clap":
-      return ({
-        ...state,
-        count: Math.min(state.count + 1, MAX_CLAP),
-        countTotal: state.count < MAX_CLAP ? state.countTotal + 1 : state.countTotal,
+const useClapState = ({ initialState = INIT_STATE } = {}) => {
+  const initialStateRef = useRef(initialState)
+  const [clapState, setClapState] = useState(initialStateRef.current)
+  const { count, countTotal } = clapState
+
+  const handleClapClick = useCallback(
+    () => {
+      setClapState({
+        count: Math.min(count + 1, MAX_CLAP),
+        countTotal: count < MAX_CLAP ? countTotal + 1 : countTotal,
         isClicked: true
       })
+    },
+    [count, countTotal]
+  )
 
-    case "reset":
-      return payload
-
-    default:
-      break;
-  }
-}
-const useClapState = ({ initialState = INIT_STATE, reducer } = {}) => {
-  const [clapState, dispatch] = React.useReducer(reducer, initialState)
-  const { count } = clapState
-  const userInitialState = React.useRef(initialState)
-
-
-  const handleClapClick = () => dispatch({ type: "clap" })
-
+  const resetRef = useRef(0)
+  // reset only if there's a change. It's possible to check changes to other state values e.g. countTotal & isClicked
+  const prevCount = usePrevious(count)
+  const reset = useCallback(
+    () => {
+      if (prevCount !== count) {
+        setClapState(initialStateRef.current)
+        ++resetRef.current
+      }
+    },
+    [prevCount, count]
+  )
 
   const getTogglerProps = ({ onClick, ...otherProps } = {}) => ({
     onClick: callFnsInSequence(handleClapClick, onClick),
@@ -174,29 +190,21 @@ const useClapState = ({ initialState = INIT_STATE, reducer } = {}) => {
     ...otherProps
   })
 
-  const reset = React.useCallback(() => {
-    dispatch({ type: "reset", payload: userInitialState.current })
-  }, [])
-
   return {
     clapState,
     getTogglerProps,
     getCounterProps,
-    reset
+    reset,
+    resetDep: resetRef.current
   }
-}
-useClapState.reducer = clapReducer
-useClapState.types = {
-  clap: "clap",
-  reset: "reset"
 }
 
 /** ====================================
- *          🔰Hook
-      useEffectAfterMount
-==================================== **/
+   *          🔰Hook
+        useEffectAfterMount
+  ==================================== **/
 
-function useEffectAfterMount(cb, deps) {
+function useEffectAfterMount (cb, deps) {
   const componentJustMounted = useRef(true)
   useEffect(() => {
     if (!componentJustMounted.current) {
@@ -208,9 +216,9 @@ function useEffectAfterMount(cb, deps) {
 }
 
 /** ====================================
- *          🔰Hook
-          useDOMRef
-==================================== **/
+   *          🔰Hook
+            useDOMRef
+  ==================================== **/
 const useDOMRef = () => {
   const [DOMRef, setDOMRef] = useState({})
   const setRef = useCallback(node => {
@@ -226,9 +234,9 @@ const useDOMRef = () => {
 }
 
 /** ====================================
- *      🔰SubComponents
-Smaller Component used by <MediumClap />
-==================================== **/
+   *      🔰SubComponents
+  Smaller Component used by <MediumClap />
+  ==================================== **/
 
 const ClapContainer = forwardRef(
   (
@@ -300,15 +308,20 @@ const CountTotal = forwardRef(
 )
 
 /** ====================================
-    *        🔰USAGE
-    Below's how a potential user
-    may consume the component API
-==================================== **/
+      *        🔰USAGE
+      Below's how a potential user
+      may consume the component API
+  ==================================== **/
 
+const initialState = { count: 10, countTotal: 22, isClicked: false }
 const Usage = () => {
-  const customReducer = (state, action) => useClapState.reducer(state, action)
-  const isClappedTooMuch = times
-  const { clapState, getTogglerProps, getCounterProps, reset } = useClapState({ reducer: customReducer })
+  const {
+    clapState,
+    getTogglerProps,
+    getCounterProps,
+    reset,
+    resetDep
+  } = useClapState({ initialState })
   const { count, countTotal, isClicked } = clapState
 
   const [
@@ -326,6 +339,22 @@ const Usage = () => {
   const onClick = () => {
     animationTimeline.replay()
   }
+
+  // Side effect after reset has occured.
+  const [uploadingReset, setUpload] = useState(false)
+  useEffectAfterMount(
+    () => {
+      setUpload(true)
+
+      const id = setTimeout(() => {
+        setUpload(false)
+        console.log('RESET COMPLETE!!!')
+      }, 3000)
+
+      return () => clearTimeout(id)
+    },
+    [resetDep]
+  )
 
   return (
     <div style={{ textAlign: 'center' }}>
@@ -349,13 +378,22 @@ const Usage = () => {
           countTotal={countTotal}
         />
       </ClapContainer>
-      <button
-        className={userStyles.resetBtn}
-        onClick={reset}
-      >
-        Reset Button 10
-      </button>
-    </div >
+      <section>
+        <button
+          className={userStyles.resetBtn}
+          disabled={uploadingReset}
+          onClick={reset}
+        >
+          reset
+        </button>
+        <pre className={userStyles.resetMsg}>
+          {JSON.stringify({ count, countTotal, isClicked })}
+        </pre>
+        <pre className={userStyles.resetMsg} style={{ height: '35px' }}>
+          {uploadingReset ? `uploading reset ${resetDep}...` : ''}
+        </pre>
+      </section>
+    </div>
   )
 }
 

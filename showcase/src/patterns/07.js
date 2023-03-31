@@ -3,7 +3,7 @@ import styles from './index.css';
 import mojs from 'mo-js';
 
 const initialState = {
-    count: 0,
+    count: 20,
     countTotal: 267,
     isClicked: false,
 };
@@ -200,6 +200,20 @@ const MediumClap = () => {
     );
 };
 
+const ClapContainer = ({ children, setRef, handleClick }) => {
+    return (
+        <button
+            id="clap"
+            ref={setRef}
+            data-refkey="clapRef"
+            className={styles.clap}
+            onClick={handleClick}
+        >
+            {children}
+        </button>
+    )
+}
+
 const ClapCount = ({ count, setRef }) => (
     <span className={styles.count} ref={setRef} data-refkey="clapCountRef">
         +{count}
@@ -231,4 +245,33 @@ const ClapTotal = ({ countTotal, setRef }) => (
  * Useage
  */
 
-export default MediumClap;
+const Usage = () => {
+    const [{ clapRef, clapCountRef, clapTotalRef }, setRef] = useDOMRef();
+    const animationTimeline = useClapAnimation({
+        clapRef,
+        clapCountRef,
+        clapTotalRef,
+    });
+    const MAXIMUM_USER_CLAP = 80;
+
+    const [{ count, countTotal, isClicked }, updateClapState] = useClapState(
+        initialState,
+        MAXIMUM_USER_CLAP
+    );
+
+    useEffectAfterMount(() => {
+        animationTimeline.replay();
+    }, [count]);
+
+    return (
+        <ClapContainer
+            setRef={setRef}
+            handleClick={updateClapState}
+        >
+            <ClapIcon isClicked={isClicked} />
+            <ClapCount count={count} setRef={setRef} />
+            <ClapTotal countTotal={countTotal} setRef={setRef} />
+        </ClapContainer>
+    );
+}
+export default Usage;
