@@ -105,9 +105,6 @@ const withClapAnimation = (WrappedComponent) => {
       this.setState({ animationTimeline: newAnimation })
     }
 
-    animate = () => {
-
-    }
     render() {
       return <WrappedComponent {...this.props} animationTimeline={this.state.animationTimeline} />
     }
